@@ -14,13 +14,12 @@ end
 
 
 class Lock(object):
-    def __init__(self, host, port, db, password, channel, service_name, lock_name):
+    def __init__(self, service_name, lock_name, host, port, db=0, password=None):
         self._redis_config = {
             "host": host,
             "port": port,
             "db": db,
             "password": password,
-            "channel": channel
         }
 
         self._name = f"{service_name}:lock:{lock_name}"
@@ -29,11 +28,11 @@ class Lock(object):
 
     async def _get_redis_conn(self):
         config = self._redis_config
-        pool = await aioredis.create_pool((config["host"], config["port"]),
-                                          db=config["db"],
-                                          password=config["password"] or None,
-                                          encoding="utf-8",
-                                          maxsize=4096)
+        pool = await aioredis.create_redis_pool((config["host"], config["port"]),
+                                                db=config["db"],
+                                                password=config["password"] or None,
+                                                encoding="utf-8",
+                                                maxsize=4096)
         return pool
 
     async def lock(self):
@@ -42,12 +41,14 @@ class Lock(object):
         self._value = uuid1().hex
 
         while True:
-            with await self._get_redis_conn() as conn:
+            pool = await self._get_redis_conn()
+            with await pool as conn:
                 try:
-                    ack = await asyncio.wait_for(conn.set(self._name, self._value,
-                                                          expire=self._timeout,
-                                                          exist=conn.SET_IF_NOT_EXIST),
-                                                 5)
+                    ack = await asyncio.wait_for(
+                        conn.set(self._name, self._value,
+                                 expire=self._timeout,
+                                 exist=conn.SET_IF_NOT_EXIST),
+                        5)
                 except asyncio.TimeoutError:
                     ack = None
                     conn.close()
@@ -64,9 +65,11 @@ class Lock(object):
 
         try:
             async def _unlock_task():
-                with await self._get_redis_conn() as conn:
+                pool = await self._get_redis_conn()
+                with await pool as conn:
                     try:
-                        ack = await conn.eval(_redlock_lua_unlock_script, [self._name], [self._value])
+                        ack = await conn.eval(
+                            _redlock_lua_unlock_script, [self._name], [self._value])
                     except Exception:
                         conn.close()
                         raise
@@ -75,3 +78,7 @@ class Lock(object):
             await asyncio.wait_for(_unlock_task(), 10)
         finally:
             self._value = None
+
+    @property
+    def is_locked(self):
+        return self._value is not None
