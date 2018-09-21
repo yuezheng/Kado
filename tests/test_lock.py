@@ -1,10 +1,8 @@
 import asyncio
-import logging
+import unittest
 
 from redis_lock.lock import Lock
-
-
-logger = logging.getLogger(__name__)
+from tests.utils import async_testcase
 
 
 REDIS_CONFIG = {
@@ -13,19 +11,20 @@ REDIS_CONFIG = {
 }
 
 
-async def main():
-    lock = Lock("lock_test", "primary", REDIS_CONFIG["host"], REDIS_CONFIG["port"])
-    await lock.lock()
-    print(lock.is_locked)
-    await asyncio.sleep(15)
-    print(lock.is_locked)
-    await lock.unlock()
-    print(lock.is_locked)
+class TestLock(unittest.TestCase):
+    def setUp(self):
+        pass
+
+    @async_testcase
+    async def test_lock_and_unlock(self):
+        lock = Lock("lock_test", "primary", REDIS_CONFIG["host"], REDIS_CONFIG["port"])
+        await lock.lock()
+        self.assertEqual(lock.is_locked, True)
+        await asyncio.sleep(15)
+        self.assertEqual(lock.is_locked, True)
+        await lock.unlock()
+        self.assertEqual(lock.is_locked, False)
 
 
 if __name__ == '__main__':
-    try:
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(main())
-    finally:
-        loop.close()
+    unittest.main()

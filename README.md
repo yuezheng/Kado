@@ -13,3 +13,14 @@ A distributed lock implemented by redis
 1. 具有超时自动解锁机制，避免陷入永久锁定；
 2. 具有排他性：不能解除其他实例对资源的锁定；
 3. 锁状态判断与加锁操作原子化；
+
+Environment require:
+python 3.6 +
+Redis 4.0 +
+
+Install requirements:
+pip install -r requirements.txt
+
+Run test:
+python -m unittest tests/test_lock.py
+
