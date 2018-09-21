@@ -17,6 +17,8 @@ async def main():
     lock = Lock("lock_test", "primary", REDIS_CONFIG["host"], REDIS_CONFIG["port"])
     await lock.lock()
     print(lock.is_locked)
+    await asyncio.sleep(15)
+    print(lock.is_locked)
     await lock.unlock()
     print(lock.is_locked)
 
