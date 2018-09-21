@@ -1,0 +1,5 @@
+.idea
+*.pyc
+build/*
+dist/*
+redis_lock.egg-info/*

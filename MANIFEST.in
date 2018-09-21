@@ -1,0 +1,5 @@
+include requirements.txt
+include LICENSE
+include VERSION
+recursive-include redis_lock *
+recursive-include tests *
