@@ -15,12 +15,15 @@ A distributed lock implemented by redis
 3. 锁状态判断与加锁操作原子化；
 
 Environment require:
-python 3.6 +
-Redis 4.0 +
+* python 3.6 +
+* Redis 4.0 +
 
 Install requirements:
+```
 pip install -r requirements.txt
+```
 
 Run test:
+```
 python -m unittest tests/test_lock.py
-
+```
